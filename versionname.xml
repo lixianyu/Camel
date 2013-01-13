@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="version_name">
+    <property name="version.code" value="1" />
+    <property name="version.name" value="0.2.1.13" />
+    <property name="version.software" value="0.0.0.13010600" />
+	<property name="android.debuggable" value="true" />
+	<property name="java.encoding" value="GBK" />
+    <property name="java.target" value="1.6" />
+    <property name="java.source" value="1.6" />
+    <property name="verbose" value="false" />
+    <!--
+    <property name="java.compilerargs" value="-Xlint:deprecation" />
+    -->
+    <property name="java.compilerargs" value="-classpath ./jar/umeng_sdk.jar" />
+</project>

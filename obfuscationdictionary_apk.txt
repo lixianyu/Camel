@@ -1,0 +1,20 @@
+#
+# This obfuscation dictionary contains reserved Java keywords. They can't
+# be used in Java source files, but they can be used in compiled class files.
+# Note that this hardly improves the obfuscation. Decent decompilers can
+# automatically replace reserved keywords, and the effect can fairly simply be
+# undone by obfuscating again with simpler names.
+#
+
+package
+private
+abstract
+continue
+strictfp
+volatile
+interface
+protected
+transient
+implements
+instanceof
+synchronized

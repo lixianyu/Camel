@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="customrules">
+    <!-- Input directories -->
+    <property name="source.dir" value="src" />
+    <property name="source.absolute.dir" location="${source.dir}" />
+    <!-- Output directories -->
+    <property name="out.dir" value="bin" />
+    <property name="out.absolute.dir" location="${out.dir}" />
+    <property name="out.classes.absolute.dir" location="${out.dir}/classes" />
+    <property name="classes.dir" value="${out.classes.absolute.dir}"/>
+	<!-- tools location -->
+    <property name="android.tools.dir" location="${sdk.dir}/tools" />
+    <property name="android.platform.tools.dir" location="${sdk.dir}/platform-tools" />
+    
+    <target name="clean" description="Delete all generated files">
+        <delete dir="${out.absolute.dir}" failonerror="false"/>
+        <delete file="${ant.project.name}.jar"/>
+    </target>
+
+    <target name="compile" description="Compiles the Task">
+        <path id="project.javac.classpath">
+            <pathelement location="libs/fastjson-1.1.26.jar" />
+        </path>
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${source.dir}" 
+               destdir="${classes.dir}"
+               includeantruntime="true"
+               verbose="false"
+               classpathref="project.javac.classpath"/>
+    </target>
+    
+    <target name="jar" description="JARs the Task" depends="clean, compile">
+        <jar destfile="${ant.project.name}.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Class-Path" value="libs/fastjson-1.1.26.jar"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <target name="ob" depends="clean, compile">
+        <property name="obfuscate.absolute.dir" location="${out.absolute.dir}/proguard" />
+        <property name="preobfuscate.jar.file" value="${obfuscate.absolute.dir}/original.jar" />
+        <property name="obfuscated.jar.file" value="${obfuscate.absolute.dir}/obfuscated.jar" />
+        <!-- input for dex will be proguard's output -->
+        <property name="out.dex.input.absolute.dir" value="${obfuscated.jar.file}" />
+
+        <!-- Add Proguard Tasks -->
+        <property name="proguard.jar" location="${android.tools.dir}/proguard/lib/proguard.jar" />
+        <taskdef name="proguard" classname="proguard.ant.ProGuardTask" classpath="${proguard.jar}" />
+
+        <!-- Set the android classpath Path object into a single property. It'll be
+             all the jar files separated by a platform path-separator.
+             Each path must be quoted if it contains spaces.
+        -->
+        <!-- 
+        <pathconvert property="project.target.classpath.value" refid="project.target.class.path">
+            <firstmatchmapper>
+                <regexpmapper from='^([^ ]*)( .*)$$' to='"\1\2"'/>
+                <identitymapper/>
+            </firstmatchmapper>
+        </pathconvert>
+ 		-->
+        
+        <!-- Build a path object with all the jar files that must be obfuscated.
+             This include the project compiled source code and any 3rd party jar
+             files. -->
+        <path id="project.all.classes.path">
+            <pathelement location="${preobfuscate.jar.file}" />
+            <!-- <path refid="project.all.jars.path" />  -->
+        </path>
+        <!-- Set the project jar files Path object into a single property. It'll be
+             all the jar files separated by a platform path-separator.
+             Each path must be quoted if it contains spaces.
+        -->
+        <pathconvert property="project.all.classes.value" refid="project.all.classes.path">
+            <firstmatchmapper>
+                <regexpmapper from='^([^ ]*)( .*)$$' to='"\1\2"'/>
+                <identitymapper/>
+            </firstmatchmapper>
+        </pathconvert>
+
+        <!-- Turn the path property ${proguard.config} from an A:B:C property
+             into a series of includes: -include A -include B -include C
+             suitable for processing by the ProGuard task. Note - this does
+             not include the leading '-include "' or the closing '"'; those
+             are added under the <proguard> call below.
+        -->
+        <path id="proguard.configpath">
+            <pathelement path="${proguard.config}"/>
+        </path>
+        <pathconvert pathsep='" -include "' property="proguard.configcmd" refid="proguard.configpath"/>
+
+        <mkdir   dir="${obfuscate.absolute.dir}" />
+        <delete file="${preobfuscate.jar.file}"/>
+        <delete file="${obfuscated.jar.file}"/>
+        <jar basedir="${out.classes.absolute.dir}"
+            destfile="${preobfuscate.jar.file}" />
+        
+        <proguard>
+            -include      "${proguard.configcmd}"
+            -libraryjars  ${java.home}/lib/rt.jar
+            -libraryjars  ${ant.home}/lib/ant.jar
+            -injars       ${project.all.classes.value}
+            -outjars      "${obfuscated.jar.file}"
+            -dump         "${obfuscate.absolute.dir}/dump.txt"
+            -printseeds   "${obfuscate.absolute.dir}/seeds.txt"
+            -printusage   "${obfuscate.absolute.dir}/usage.txt"
+            -printmapping "${obfuscate.absolute.dir}/mapping.txt"
+        </proguard>
+        
+    </target>
+</project>

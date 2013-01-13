@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="custom_rules">
+    <import file="versionname.xml" optional="false" />
+    <import file="Uranus.xml" optional="false"/>
+
+    <macrodef name="setmyanttaskjarpath">
+       <attribute name="v" default="true"/>
+       <sequential>
+           <if>
+            <condition>
+                <os family="windows" />
+            </condition>
+            <then>
+                <property name="my.ant.task.jar.path" value="./MyAntTask/MyAntTask.jar" />
+            </then>
+            <else>
+                <property name="my.ant.task.jar.path" value="./MyAntTask/MyAntTask.jar" />
+            </else>
+        </if>
+       </sequential>
+	</macrodef>
+	
+    <target name="-freesia">
+        <setmyanttaskjarpath/>
+        <echo>my.ant.task.jar.path is ${my.ant.task.jar.path}</echo>
+        <taskdef name="mybuildnumber" classname="com.camel.ant.buildnumber.MyBuildNumber" classpath="${my.ant.task.jar.path}"/>
+    	<mybuildnumber/>
+    </target>
+    
+    <target name="-pre-build" depends="-freesia">
+        <setmyanttaskjarpath/>
+        <echo>Updating AndroidManifest.xml version.name with :${version.name}</echo>
+        <replaceregexp file="./AndroidManifest.xml"
+            match='android:versionName="(.*)"'
+            replace='android:versionName="${version.name}"'
+            byline="false">
+        </replaceregexp>
+    	
+    	<echo>Updating AndroidManifest.xml android.debuggable with :${android.debuggable}</echo>
+    	<replaceregexp file="./AndroidManifest.xml"
+    	        match='android:debuggable="(.*)"'
+    	        replace='android:debuggable="${android.debuggable}"'
+    	        byline="false">
+    	    </replaceregexp>
+    </target>
+    
+    <target name="-post-build">
+    	<property name="out.final.file" location="${out.absolute.dir}/${ant.project.name}-release.apk"/>
+    	<copy file="${out.final.file}" 
+            tofile="${out.absolute.dir}/${ant.project.name}-release-${version.name}-Build-${build.number}.apk"
+            overwrite="true" 
+            verbose="true"
+            force="true"/>
+        
+    	<copy file="${out.final.file}"
+    	    tofile="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/${ant.project.name}-release-${version.name}-Build-${build.number}.apk"
+            overwrite="true" 
+            verbose="true"
+            force="true"/>
+    	
+		<copy file="${asset.absolute.dir}/secondary_dex.jar"
+            tofile="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/secondary_dex-Build-${build.number}.jar"
+            overwrite="true" 
+            verbose="true"
+            force="true"/>
+    	<if>
+            <condition>
+                <resourceexists>
+                    <file file="${out.absolute.dir}/proguard.1"/>
+                </resourceexists>
+            </condition>
+            <then>
+            	<copy todir="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/proguard.1-${version.name}-Build-${build.number}">
+            	    <fileset dir="${out.absolute.dir}/proguard.1"/>
+            	</copy>
+                <copy todir="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/proguard.2-${version.name}-Build-${build.number}">
+                    <fileset dir="${out.absolute.dir}/proguard.2"/>
+                </copy>
+            </then>
+            <else>
+                <echo>File ${out.absolute.dir}\proguard does not exist.</echo>
+            </else>
+        </if>
+    </target>
+</project>
