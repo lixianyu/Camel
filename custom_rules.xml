@@ -2,7 +2,12 @@
 <project name="custom_rules">
     <import file="versionname.xml" optional="false" />
     <import file="Uranus.xml" optional="false"/>
+    <import file="UranusParallel.xml" optional="false"/>
 
+    <target name="pa">
+        <property name="obfuscate.in.parallel" value="true" />
+    </target>
+    
     <macrodef name="setmyanttaskjarpath">
        <attribute name="v" default="true"/>
        <sequential>
@@ -22,9 +27,11 @@
 	
     <target name="-freesia">
         <setmyanttaskjarpath/>
-        <echo>my.ant.task.jar.path is ${my.ant.task.jar.path}</echo>
         <taskdef name="mybuildnumber" classname="com.camel.ant.buildnumber.MyBuildNumber" classpath="${my.ant.task.jar.path}"/>
-    	<mybuildnumber/>
+        <echo>my.ant.task.jar.path is ${my.ant.task.jar.path}</echo>
+        <parallel timeout="15000">
+    		<mybuildnumber/>
+    	</parallel>
     </target>
     
     <target name="-pre-build" depends="-freesia">
@@ -46,40 +53,44 @@
     
     <target name="-post-build">
     	<property name="out.final.file" location="${out.absolute.dir}/${ant.project.name}-release.apk"/>
-    	<copy file="${out.final.file}" 
-            tofile="${out.absolute.dir}/${ant.project.name}-release-${version.name}-Build-${build.number}.apk"
-            overwrite="true" 
-            verbose="true"
-            force="true"/>
-        
-    	<copy file="${out.final.file}"
-    	    tofile="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/${ant.project.name}-release-${version.name}-Build-${build.number}.apk"
-            overwrite="true" 
-            verbose="true"
-            force="true"/>
-    	
-		<copy file="${asset.absolute.dir}/secondary_dex.jar"
-            tofile="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/secondary_dex-Build-${build.number}.jar"
-            overwrite="true" 
-            verbose="true"
-            force="true"/>
-    	<if>
-            <condition>
-                <resourceexists>
-                    <file file="${out.absolute.dir}/proguard.1"/>
-                </resourceexists>
-            </condition>
-            <then>
-            	<copy todir="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/proguard.1-${version.name}-Build-${build.number}">
-            	    <fileset dir="${out.absolute.dir}/proguard.1"/>
-            	</copy>
-                <copy todir="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/proguard.2-${version.name}-Build-${build.number}">
-                    <fileset dir="${out.absolute.dir}/proguard.2"/>
-                </copy>
-            </then>
-            <else>
-                <echo>File ${out.absolute.dir}\proguard does not exist.</echo>
-            </else>
-        </if>
+    	<parallel>
+    	    <sequential>
+		    	<copy file="${out.final.file}" 
+		            tofile="${out.absolute.dir}/${ant.project.name}-release-${version.name}-Build-${build.number}.apk"
+		            overwrite="true" 
+		            verbose="true"
+		            force="true"/>
+		    	<copy file="${out.final.file}"
+		    	    tofile="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/${ant.project.name}-release-${version.name}-Build-${build.number}.apk"
+		            overwrite="true" 
+		            verbose="true"
+		            force="true"/>
+				<copy file="${asset.absolute.dir}/secondary_dex.jar"
+		            tofile="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/secondary_dex-Build-${build.number}.jar"
+		            overwrite="true" 
+		            verbose="true"
+		            force="true"/>
+			</sequential>
+			<sequential>
+		    	<if>
+		            <condition>
+		                <resourceexists>
+		                    <file file="${out.absolute.dir}/proguard.1"/>
+		                </resourceexists>
+		            </condition>
+		            <then>
+		            	<copy todir="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/proguard.1-${version.name}-Build-${build.number}">
+		            	    <fileset dir="${out.absolute.dir}/proguard.1"/>
+		            	</copy>
+		                <copy todir="${out.absolute.dir}/../releaseCamel/${version.name}/Build-${build.number}/proguard.2-${version.name}-Build-${build.number}">
+		                    <fileset dir="${out.absolute.dir}/proguard.2"/>
+		                </copy>
+		            </then>
+		            <else>
+		                <echo>File ${out.absolute.dir}\proguard does not exist.</echo>
+		            </else>
+		        </if>
+	        </sequential>
+        </parallel>
     </target>
 </project>

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="UranusParallel">
+    <macrodef name="ob1macro">
+       <sequential>
+           <property name="obfuscate.absolute.dir" location="${out.absolute.dir}/proguard.1" />
+	        <property name="preobfuscate.jar.file" value="${obfuscate.absolute.dir}/original.jar" />
+	        <property name="obfuscated.jar.file" value="${obfuscate.absolute.dir}/obfuscated.jar" />
+	        <!-- input for dex will be proguard's output -->
+	        <property name="out.dex.input.absolute.dir" value="${obfuscated.jar.file}" />
+	
+	        <!-- Add Proguard Tasks -->
+	        <property name="proguard.jar" location="${android.tools.dir}/proguard/lib/proguard.jar" />
+	        <taskdef name="proguard" classname="proguard.ant.ProGuardTask" classpath="${proguard.jar}" />
+	
+	        <!-- Set the android classpath Path object into a single property. It'll be
+	             all the jar files separated by a platform path-separator.
+	             Each path must be quoted if it contains spaces.
+	        -->
+	        <pathconvert property="project.target.classpath.value" refid="project.target.class.path">
+	            <firstmatchmapper>
+	                <regexpmapper from='^([^ ]*)( .*)$$' to='"\1\2"'/>
+	                <identitymapper/>
+	            </firstmatchmapper>
+	        </pathconvert>
+	
+	        <!-- Build a path object with all the jar files that must be obfuscated.
+	             This include the project compiled source code and any 3rd party jar
+	             files. -->
+	        <if>
+	            <condition>
+	                <isset property="build.jar"/>
+	            </condition>
+	            <then>
+	                <path id="project.all.classes.path">
+			            <pathelement location="${preobfuscate.jar.file}" />
+			            <path refid="project.all.jars.path" />
+			        </path>
+	            </then>
+	            <else>
+	                <path id="project.all.classes.path">
+			            <pathelement location="${preobfuscate.jar.file}" />
+			            <pathelement location="./jar/umeng_sdk.jar" />
+			            <path refid="project.all.jars.path" />
+			        </path>
+	            </else>
+	        </if>
+	        
+	        <!-- Set the project jar files Path object into a single property. It'll be
+	             all the jar files separated by a platform path-separator.
+	             Each path must be quoted if it contains spaces.
+	        -->
+	        <pathconvert property="project.all.classes.value" refid="project.all.classes.path">
+	            <firstmatchmapper>
+	                <regexpmapper from='^([^ ]*)( .*)$$' to='"\1\2"'/>
+	                <identitymapper/>
+	            </firstmatchmapper>
+	        </pathconvert>
+	
+	        <!-- Turn the path property ${proguard.config} from an A:B:C property
+	             into a series of includes: -include A -include B -include C
+	             suitable for processing by the ProGuard task. Note - this does
+	             not include the leading '-include "' or the closing '"'; those
+	             are added under the <proguard> call below.
+	        -->
+	        <path id="proguard.configpath">
+	            <pathelement path="${proguard.config}"/>
+	        </path>
+	        <pathconvert pathsep='" -include "' property="proguard.configcmd" refid="proguard.configpath"/>
+	
+	        <mkdir dir="${obfuscate.absolute.dir}" />
+	        <delete file="${preobfuscate.jar.file}"/>
+	        <delete file="${obfuscated.jar.file}"/>
+	        <!-- Create staging directories to store .class files to be converted to the -->
+	        <!-- default dex and the secondary dex. -->
+	        <mkdir dir="${out.classes.absolute.dir}.1"/>
+	        <!-- Primary dex to include everything but the concrete library implementation. -->
+	        <copy todir="${out.classes.absolute.dir}.1" >
+	            <fileset dir="${out.classes.absolute.dir}" >
+	                <include name="com/example/dex/main/**" />
+	            </fileset>
+	        </copy>
+	        
+	        <jar basedir="${out.classes.absolute.dir}.1"
+	            destfile="${preobfuscate.jar.file}" />
+	        <proguard>
+	            -include      "${proguard.configcmd}"
+	            -include      "${out.absolute.dir}/proguard.txt"
+	            -injars       ${project.all.classes.value}
+	            -outjars      "${obfuscated.jar.file}"
+	            -libraryjars  ${project.target.classpath.value}
+	            -dump         "${obfuscate.absolute.dir}/dump.txt"
+	            -printseeds   "${obfuscate.absolute.dir}/seeds.txt"
+	            -printusage   "${obfuscate.absolute.dir}/usage.txt"
+	            -printmapping "${obfuscate.absolute.dir}/mapping.txt"
+	        </proguard>
+	        
+	        <!-- Compile .class files from the two stage directories to the apppropriate dex files. -->
+	              <!--
+	              <dex-helper-mod input-dir = "${out.classes.absolute.dir}.1"
+	                  output-dex-file = "${out.absolute.dir}/${dex.file.name}"
+	                  obfuscate-dir = "${out.absolute.dir}/proguard.1"/>
+	              -->
+	         <dex-helper-mod input-dir = "${out.dex.input.absolute.dir}"
+	             output-dex-file = "${out.absolute.dir}/${dex.file.name}"
+	             obfuscate-dir = "${out.absolute.dir}/proguard.1"/>
+       </sequential>
+	</macrodef>
+	
+    <macrodef name="ob2macro">
+        <sequential>
+            <property name="obfuscate.absolute.dir2" location="${out.absolute.dir}/proguard.2" />
+	        <property name="preobfuscate.jar.file2" value="${obfuscate.absolute.dir2}/original.jar" />
+	        <property name="obfuscated.jar.file2" value="${obfuscate.absolute.dir2}/obfuscated.jar" />
+	        <!-- input for dex will be proguard's output -->
+	        <property name="out.dex.input.absolute.dir2" value="${obfuscated.jar.file2}" />
+	
+	        <!-- Add Proguard Tasks -->
+	        <property name="proguard.jar" location="${android.tools.dir}/proguard/lib/proguard.jar" />
+	        <taskdef name="proguard" classname="proguard.ant.ProGuardTask" classpath="${proguard.jar}" />
+	
+	        <!-- Set the android classpath Path object into a single property. It'll be
+	             all the jar files separated by a platform path-separator.
+	             Each path must be quoted if it contains spaces.
+	        -->
+	        <pathconvert property="project.target.classpath.value" refid="project.target.class.path">
+	            <firstmatchmapper>
+	                <regexpmapper from='^([^ ]*)( .*)$$' to='"\1\2"'/>
+	                <identitymapper/>
+	            </firstmatchmapper>
+	        </pathconvert>
+	
+	        <!-- Build a path object with all the jar files that must be obfuscated.
+	             This include the project compiled source code and any 3rd party jar
+	             files. -->
+	        <path id="project.all.classes.path2">
+	            <pathelement location="${preobfuscate.jar.file2}" />
+	            <path refid="project.all.jars.path" />
+	        </path>
+	        <!-- Set the project jar files Path object into a single property. It'll be
+	             all the jar files separated by a platform path-separator.
+	             Each path must be quoted if it contains spaces.
+	        -->
+	        <pathconvert property="project.all.classes.value2" refid="project.all.classes.path2">
+	            <firstmatchmapper>
+	                <regexpmapper from='^([^ ]*)( .*)$$' to='"\1\2"'/>
+	                <identitymapper/>
+	            </firstmatchmapper>
+	        </pathconvert>
+	
+	        <!-- Turn the path property ${proguard.config.dex} from an A:B:C property
+	             into a series of includes: -include A -include B -include C
+	             suitable for processing by the ProGuard task. Note - this does
+	             not include the leading '-include "' or the closing '"'; those
+	             are added under the <proguard> call below.
+	        -->
+	        <path id="proguard.configpath">
+	            <pathelement path="${proguard.config.dex}"/>
+	        </path>
+	        <pathconvert pathsep='" -include "' property="proguard.configcmd.dex" refid="proguard.configpath"/>
+	
+	        <mkdir   dir="${obfuscate.absolute.dir2}" />
+	        <delete file="${preobfuscate.jar.file2}"/>
+	        <delete file="${obfuscated.jar.file2}"/>
+	        
+	        <mkdir dir="${out.classes.absolute.dir}.2"/>
+	        <!-- Secondary dex to include the concrete library implementation. -->
+	        <copy todir="${out.classes.absolute.dir}.2" >
+	            <fileset dir="${out.classes.absolute.dir}" >
+	                <exclude name="com/example/dex/main/**" />
+	            </fileset>
+	        </copy>
+	        <jar basedir="${out.classes.absolute.dir}.2"
+	            destfile="${preobfuscate.jar.file2}" />
+	        <proguard>
+	            -include      "${proguard.configcmd.dex}"
+	            -include      "${out.absolute.dir}/proguard.txt"
+	            -injars       ${project.all.classes.value2}
+	            -outjars      "${obfuscated.jar.file2}"
+	            -libraryjars  ${project.target.classpath.value}
+	            -dump         "${obfuscate.absolute.dir2}/dump.txt"
+	            -printseeds   "${obfuscate.absolute.dir2}/seeds.txt"
+	            -printusage   "${obfuscate.absolute.dir2}/usage.txt"
+	            -printmapping "${obfuscate.absolute.dir2}/mapping.txt"
+	        </proguard>
+	        
+	        <mkdir dir="${out.absolute.dir}/secondary_dex_dir" />
+	        <!--
+	             <dex-helper-mod input-dir="${out.classes.absolute.dir}.2"
+	                 output-dex-file="${out.absolute.dir}/secondary_dex_dir/classes.dex" 
+	                 obfuscate-dir = "${out.absolute.dir}/proguard.2"/>
+	             -->
+	        <dex-helper-mod input-dir="${out.dex.input.absolute.dir2}"
+	                 output-dex-file="${out.absolute.dir}/secondary_dex_dir/classes.dex" 
+	                 obfuscate-dir = "${out.absolute.dir}/proguard.2"/>
+	                             
+	        <!-- Jar the secondary dex file so it can be consumed by the DexClassLoader. -->
+	        <!-- Package the output in the assets directory of the apk. -->
+	        <jar destfile="${asset.absolute.dir}/secondary_dex.jar"
+	             basedir="${out.absolute.dir}/secondary_dex_dir" includes="classes.dex" />
+        </sequential>
+    </macrodef>
+</project>
